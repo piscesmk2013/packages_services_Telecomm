@@ -33,9 +33,11 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.VibrationAttributes;
 import android.os.VibrationEffect;
+import android.os.UserHandle;
 import android.os.Vibrator;
 import android.telecom.Log;
 import android.telecom.TelecomManager;
+import android.provider.Settings;
 
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.server.telecom.LogUtils.EventTimer;
@@ -112,6 +114,12 @@ public class Ringer {
             0, // No delay before starting
             255, // Vibrate full amplitude
             0, // No amplitude while waiting
+    };
+
+    private static final long[] CALL_WAITING_VIBRATION_PATTERN = {
+            200,
+            300,
+            500,
     };
 
     /**
@@ -431,6 +439,13 @@ public class Ringer {
         Log.v(this, "Playing call-waiting tone.");
 
         stopRinging();
+
+       if (Settings.System.getIntForUser(mContext.getContentResolver(),
+                Settings.System.INCALL_FEEDBACK_VIBRATE, 0, UserHandle.USER_CURRENT) == 1) {
+            if (mVibrator.hasVibrator()) {
+                mVibrator.vibrate(CALL_WAITING_VIBRATION_PATTERN, -1);
+            }
+        }
 
         if (mCallWaitingPlayer == null) {
             Log.addEvent(call, LogUtils.Events.START_CALL_WAITING_TONE, reason);
